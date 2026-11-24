@@ -189,7 +189,7 @@ test('LS-06 admin cabang registers schools only into the own branch', function (
         'jenjang' => Jenjang::SMK->value,
         'kabupaten_kota_id' => KabupatenKota::factory()->create()->id,
         'cabang_id' => $this->cabangB->id,
-        'narahubung_utama' => ['nama' => 'Bu Ani', 'nomor_wa' => '0812'],
+        'narahubung_utama' => ['nama' => 'Bu Ani', 'nomor_wa' => '0812 3456 789'],
     ]);
 
     expect($sekolah->cabang_id)->toBe($this->cabangA->id);

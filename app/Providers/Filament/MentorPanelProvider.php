@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\EditProfile;
+use App\Filament\Auth\Login;
 use App\Http\Middleware\EnforceIdleTimeout;
 use App\Http\Middleware\RequirePasswordChange;
 use Filament\Http\Middleware\Authenticate;
@@ -29,7 +30,7 @@ class MentorPanelProvider extends PanelProvider
             ->id('mentor')
             ->path('mentor')
             ->viteTheme('resources/css/filament/mentor/theme.css')
-            ->login()
+            ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             ->globalSearch(false)
             ->databaseNotifications()

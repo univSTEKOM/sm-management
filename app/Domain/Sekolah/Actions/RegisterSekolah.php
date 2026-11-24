@@ -4,6 +4,7 @@ namespace App\Domain\Sekolah\Actions;
 
 use App\Domain\Master\Models\Cabang;
 use App\Domain\Sekolah\Models\Narahubung;
+use App\Domain\Sekolah\Models\NarahubungRiwayat;
 use App\Domain\Sekolah\Models\Sekolah;
 use App\Domain\Sekolah\Support\NamaSekolahNormalizer;
 use App\Domain\Shared\Enums\Jenjang;
@@ -43,10 +44,12 @@ final class RegisterSekolah
             'kategori_ids.*' => ['integer', Rule::exists('kategori_pelatihan', 'id')->where('aktif', true)],
             'narahubung_utama' => ['required', 'array'],
             'narahubung_utama.nama' => ['required', 'string', 'max:255'],
-            'narahubung_utama.nomor_wa' => ['required', 'string', 'max:30'],
+            'narahubung_utama.nomor_wa' => ManageNarahubung::rules()['nomor_wa'],
             'narahubung_utama.jabatan' => ['nullable', 'string', 'max:255'],
             'narahubung_utama.email' => ['nullable', 'email', 'max:255'],
-        ], [], [
+        ], [
+            'narahubung_utama.nomor_wa.regex' => 'Nomor WhatsApp hanya boleh berisi angka, spasi, tanda hubung, dan awalan +.',
+        ], [
             'narahubung_utama.nama' => 'nama narahubung utama',
             'narahubung_utama.nomor_wa' => 'nomor WhatsApp narahubung utama',
         ])->validate();
@@ -69,7 +72,7 @@ final class RegisterSekolah
 
             $sekolah->kategori()->sync($data['kategori_ids'] ?? []);
 
-            Narahubung::create([
+            $narahubung = Narahubung::create([
                 'sekolah_id' => $sekolah->id,
                 'nama' => $data['narahubung_utama']['nama'],
                 'nomor_wa' => $data['narahubung_utama']['nomor_wa'],
@@ -77,6 +80,14 @@ final class RegisterSekolah
                 'email' => $data['narahubung_utama']['email'] ?? null,
                 'is_utama' => true,
                 'aktif' => true,
+            ]);
+
+            // Every contact change, including the first one, is kept in the history (BR-SCH-06).
+            NarahubungRiwayat::create([
+                'narahubung_id' => $narahubung->id,
+                'data_sebelum' => null,
+                'data_sesudah' => $narahubung->snapshot(),
+                'diubah_oleh' => $actor->id,
             ]);
 
             AuditWriter::record('sekolah.create', $actor, $sekolah, null, null, $sekolah->fresh()->toArray() + [

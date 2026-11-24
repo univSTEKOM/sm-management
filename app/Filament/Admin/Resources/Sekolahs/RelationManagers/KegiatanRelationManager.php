@@ -21,10 +21,15 @@ class KegiatanRelationManager extends RelationManager
 
     protected static ?string $title = 'Kegiatan';
 
+    /** Set by the stage-specific subclasses so an activity shows in exactly one tab (AC-SCH-09). */
+    protected static ?Tahap $tahap = null;
+
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['metode', 'mentorPelaksana'])->orderBy('tahap')->orderBy('urutan'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['metode', 'mentorPelaksana'])
+                ->when(static::$tahap, fn ($q, Tahap $tahap) => $q->where('tahap', $tahap->value))
+                ->orderBy('tahap')->orderBy('urutan'))
             ->columns([
                 TextColumn::make('tahap')->badge()->formatStateUsing(fn (Tahap $state) => $state->label()),
                 TextColumn::make('nama_sesi')->label('Sesi'),
@@ -35,7 +40,7 @@ class KegiatanRelationManager extends RelationManager
                 TextColumn::make('status')->badge()->formatStateUsing(fn (StatusKegiatan $state) => $state->label()),
             ])
             ->filters([
-                SelectFilter::make('tahap')->options([
+                SelectFilter::make('tahap')->visible(static::$tahap === null)->options([
                     Tahap::Awal->value => Tahap::Awal->label(),
                     Tahap::TindakLanjut->value => Tahap::TindakLanjut->label(),
                 ]),

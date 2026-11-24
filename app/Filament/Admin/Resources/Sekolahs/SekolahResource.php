@@ -7,7 +7,9 @@ use App\Filament\Admin\Resources\Sekolahs\Pages\CreateSekolah;
 use App\Filament\Admin\Resources\Sekolahs\Pages\EditSekolah;
 use App\Filament\Admin\Resources\Sekolahs\Pages\ListSekolahs;
 use App\Filament\Admin\Resources\Sekolahs\Pages\ViewSekolah;
-use App\Filament\Admin\Resources\Sekolahs\RelationManagers\KegiatanRelationManager;
+use App\Filament\Admin\Resources\Sekolahs\RelationManagers\KegiatanAwalRelationManager;
+use App\Filament\Admin\Resources\Sekolahs\RelationManagers\KegiatanTlRelationManager;
+use App\Filament\Admin\Resources\Sekolahs\RelationManagers\NarahubungRelationManager;
 use App\Filament\Admin\Resources\Sekolahs\Schemas\SekolahForm;
 use App\Filament\Admin\Resources\Sekolahs\Schemas\SekolahInfolist;
 use App\Filament\Admin\Resources\Sekolahs\Tables\SekolahsTable;
@@ -26,6 +28,12 @@ class SekolahResource extends Resource
     protected static ?string $slug = 'sekolah';
 
     protected static ?string $modelLabel = 'Sekolah';
+
+    protected static ?string $navigationLabel = 'Sekolah Mitra';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Sekolah Mitra';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $pluralModelLabel = 'Sekolah';
 
@@ -60,7 +68,9 @@ class SekolahResource extends Resource
     public static function getRelations(): array
     {
         return [
-            KegiatanRelationManager::class,
+            NarahubungRelationManager::class,
+            KegiatanAwalRelationManager::class,
+            KegiatanTlRelationManager::class,
         ];
     }
 

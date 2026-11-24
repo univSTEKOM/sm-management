@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -22,6 +23,8 @@ use Illuminate\Notifications\Notifiable;
  * @property int|null $cabang_id
  * @property bool $aktif
  * @property bool $wajib_ganti_password
+ * @property int $gagal_login
+ * @property Carbon|null $dikunci_sampai
  */
 #[Fillable(['name', 'email', 'password', 'telepon', 'role', 'cabang_id', 'aktif', 'wajib_ganti_password'])]
 #[Hidden(['password', 'remember_token'])]

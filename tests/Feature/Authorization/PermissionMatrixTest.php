@@ -26,6 +26,8 @@ const PRD_MATRIX = [
     'sekolah.correct_cabang' => ['A', '-', '-', '-'],
     'sekolah.transfer' => ['-', '-', '-', '-'],
     'sekolah.archive' => ['A', 'A', 'C', '-'],
+    // Not in PRD v1.3: owner decision 23 Nov 2026 (PHASE_LOG D-03), Admin Pusat only.
+    'sekolah.mou' => ['-', 'A', '-', '-'],
     'sekolah.kategori' => ['A', 'A', 'C', '-'],
     'narahubung.manage' => ['A', 'A', 'C', '-'],
     'narahubung.propose' => ['-', '-', '-', 'T'],

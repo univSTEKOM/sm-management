@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sm
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: sm_management_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U sm" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: sm_management_test
+      DB_USERNAME: sm
+      DB_PASSWORD: ci-only
+      APP_ENV: testing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, zip, intl, mbstring
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci && npm run build
+      - run: vendor/bin/pint --test
+      - run: vendor/bin/phpstan analyse --memory-limit=1G
+      - run: vendor/bin/pest
+
+  e2e:
+    needs: backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sm
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: sm_management
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U sm" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: sm_management
+      DB_USERNAME: sm
+      DB_PASSWORD: ci-only
+      E2E_SKIP_RESEED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, zip, intl, mbstring
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci && npm run build
+      - run: php artisan migrate:fresh --seed --force
+      - run: npx playwright install --with-deps chromium
+      - run: php -S 127.0.0.1:8000 -t public vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php &
+      - run: npx playwright test
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8000
+          CI: 1

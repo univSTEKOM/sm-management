@@ -41,6 +41,8 @@ final class AccessConfig
         'sekolah.correct_cabang' => ['superadmin' => self::ALL, 'admin_pusat' => self::NONE, 'admin_cabang' => self::NONE, 'mentor' => self::NONE],
         'sekolah.transfer' => ['superadmin' => self::NONE, 'admin_pusat' => self::NONE, 'admin_cabang' => self::NONE, 'mentor' => self::NONE],
         'sekolah.archive' => ['superadmin' => self::ALL, 'admin_pusat' => self::ALL, 'admin_cabang' => self::CABANG, 'mentor' => self::NONE],
+        // Owner decision 23 Nov 2026 (docs/PHASE_LOG.md D-03): MOU status is recorded by Admin Pusat only.
+        'sekolah.mou' => ['superadmin' => self::NONE, 'admin_pusat' => self::ALL, 'admin_cabang' => self::NONE, 'mentor' => self::NONE],
         'sekolah.kategori' => ['superadmin' => self::ALL, 'admin_pusat' => self::ALL, 'admin_cabang' => self::CABANG, 'mentor' => self::NONE],
         'narahubung.manage' => ['superadmin' => self::ALL, 'admin_pusat' => self::ALL, 'admin_cabang' => self::CABANG, 'mentor' => self::NONE],
         'narahubung.propose' => ['superadmin' => self::NONE, 'admin_pusat' => self::NONE, 'admin_cabang' => self::NONE, 'mentor' => self::ASSIGNED],

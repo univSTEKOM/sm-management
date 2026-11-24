@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\EditProfile;
+use App\Filament\Auth\Login;
 use App\Http\Middleware\EnforceIdleTimeout;
 use App\Http\Middleware\RequirePasswordChange;
 use Filament\Http\Middleware\Authenticate;
@@ -30,7 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
-            ->login()
+            ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             ->globalSearch(false)
             ->databaseNotifications()

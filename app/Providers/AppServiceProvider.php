@@ -5,12 +5,15 @@ namespace App\Providers;
 use App\Domain\Jadwal\Models\Kegiatan;
 use App\Domain\Master\Models\AppSetting;
 use App\Domain\Master\Support\MasterRegistry;
+use App\Domain\Sekolah\Models\NarahubungUsulan;
 use App\Domain\Sekolah\Models\Sekolah;
 use App\Http\Middleware\EnforceIdleTimeout;
+use App\Listeners\SendSekolahNotifications;
 use App\Models\User;
 use App\Policies\AppSettingPolicy;
 use App\Policies\KegiatanPolicy;
 use App\Policies\MasterDataPolicy;
+use App\Policies\NarahubungUsulanPolicy;
 use App\Policies\SekolahPolicy;
 use App\Policies\UserPolicy;
 use App\Support\Audit\AuditWriter;
@@ -36,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(NarahubungUsulan::class, NarahubungUsulanPolicy::class);
         Gate::policy(Sekolah::class, SekolahPolicy::class);
         Gate::policy(Kegiatan::class, KegiatanPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
@@ -44,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
         foreach (MasterRegistry::types() as $masterType) {
             Gate::policy($masterType, MasterDataPolicy::class);
         }
+
+        Event::subscribe(SendSekolahNotifications::class);
 
         $this->registerAuthAudit();
     }

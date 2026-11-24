@@ -18,6 +18,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $kegiatan_acuan_id
  * @property string|null $link
  */
+/**
+ * @property int $id
+ * @property int $sekolah_id
+ * @property Tahap $tahap
+ * @property string|null $link
+ */
 class Sertifikat extends Model
 {
     protected $table = 'sertifikat';
@@ -29,11 +35,13 @@ class Sertifikat extends Model
         return ['tahap' => Tahap::class, 'tanggal_terbit' => 'date', 'diinput_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Sekolah, $this> */
     public function sekolah(): BelongsTo
     {
         return $this->belongsTo(Sekolah::class);
     }
 
+    /** @return BelongsTo<Kegiatan, $this> */
     public function kegiatanAcuan(): BelongsTo
     {
         return $this->belongsTo(Kegiatan::class, 'kegiatan_acuan_id');

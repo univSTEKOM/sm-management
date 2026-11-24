@@ -29,11 +29,13 @@ class LaporanRevisi extends Model
         static::deleting(fn () => throw new LogicException('Report revisions are append-only.'));
     }
 
+    /** @return BelongsTo<Kegiatan, $this> */
     public function kegiatan(): BelongsTo
     {
         return $this->belongsTo(Kegiatan::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function penulis(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ditulis_oleh');

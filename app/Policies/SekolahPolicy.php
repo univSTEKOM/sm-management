@@ -46,6 +46,32 @@ class SekolahPolicy
             && ! $sekolah->kegiatan()->exists();
     }
 
+    /** Owner decision D-03: MOU is recorded or revoked by Admin Pusat only. */
+    public function recordMou(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'sekolah.mou', $sekolah);
+    }
+
+    public function manageNarahubung(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'narahubung.manage', $sekolah);
+    }
+
+    public function proposeNarahubung(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'narahubung.propose', $sekolah);
+    }
+
+    public function decideNarahubung(User $user, Sekolah $sekolah): bool
+    {
+        return ScopeResolver::allows($user, 'narahubung.decide', $sekolah);
+    }
+
+    public function assignMentor(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'penugasan.assign', $sekolah);
+    }
+
     public function delete(User $user, Sekolah $sekolah): bool
     {
         return false;
