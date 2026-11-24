@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Providers\Filament;
+
+use App\Filament\Auth\EditProfile;
+use App\Http\Middleware\EnforceIdleTimeout;
+use App\Http\Middleware\RequirePasswordChange;
+use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\AuthenticateSession;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Pages\Dashboard;
+use Filament\Panel;
+use Filament\PanelProvider;
+use Filament\Support\Colors\Color;
+use Filament\Widgets\AccountWidget;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+
+class MentorPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('mentor')
+            ->path('mentor')
+            ->viteTheme('resources/css/filament/mentor/theme.css')
+            ->login()
+            ->profile(EditProfile::class, isSimple: false)
+            ->globalSearch(false)
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
+            ->colors([
+                'primary' => Color::Teal,
+            ])
+            ->discoverResources(in: app_path('Filament/Mentor/Resources'), for: 'App\Filament\Mentor\Resources')
+            ->discoverPages(in: app_path('Filament/Mentor/Pages'), for: 'App\Filament\Mentor\Pages')
+            ->pages([
+                Dashboard::class,
+            ])
+            ->discoverWidgets(in: app_path('Filament/Mentor/Widgets'), for: 'App\Filament\Mentor\Widgets')
+            ->widgets([
+                AccountWidget::class,
+            ])
+            ->middleware([
+                EncryptCookies::class,
+                AddQueuedCookiesToResponse::class,
+                StartSession::class,
+                AuthenticateSession::class,
+                ShareErrorsFromSession::class,
+                PreventRequestForgery::class,
+                SubstituteBindings::class,
+                DisableBladeIconComponents::class,
+                DispatchServingFilamentEvent::class,
+            ])
+            ->authMiddleware([
+                Authenticate::class,
+            ])
+            // Persistent: also applied to Livewire update requests of this panel.
+            ->authMiddleware([
+                EnforceIdleTimeout::class,
+                RequirePasswordChange::class,
+            ], isPersistent: true);
+    }
+}

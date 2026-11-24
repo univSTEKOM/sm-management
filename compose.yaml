@@ -1,0 +1,41 @@
+# Local development environment (not for production).
+services:
+  app:
+    build: ./docker/php
+    working_dir: /app
+    volumes:
+      - .:/app
+      # vendor/ lives in a Linux volume: reading it through the Windows mount is very slow.
+      # The host keeps its own vendor/ (Vite theme build, IDE); run composer in both after lock changes.
+      - vendor:/app/vendor
+    ports:
+      - "8000:8000"
+    # Container-only overrides; a developer's own .env stays untouched.
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: sm_management
+      DB_USERNAME: sm
+      DB_PASSWORD: secret
+      VIEW_COMPILED_PATH: /tmp/views
+    depends_on:
+      - db
+    command: ["sleep", "infinity"]
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: sm_management
+      POSTGRES_USER: sm
+      POSTGRES_PASSWORD: secret
+      TZ: Asia/Jakarta
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+
+volumes:
+  pgdata:
+  vendor:
