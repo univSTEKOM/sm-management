@@ -46,10 +46,40 @@ class SekolahPolicy
             && ! $sekolah->kegiatan()->exists();
     }
 
-    /** Owner decision D-03: MOU is recorded or revoked by Admin Pusat only. */
+    /** Owner decision D-03 (updated 26 Nov 2026): MOU is recorded or revoked by Superadmin and Admin Pusat only. */
     public function recordMou(User $user, Sekolah $sekolah): bool
     {
         return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'sekolah.mou', $sekolah);
+    }
+
+    /** Superadmin and Admin Pusat may view/download the uploaded MOU document (including archived schools). */
+    public function viewMou(User $user, Sekolah $sekolah): bool
+    {
+        return ScopeResolver::allows($user, 'sekolah.mou', $sekolah);
+    }
+
+    /** FR-JDA-01: schedule the initial training (awal.create), school not archived. */
+    public function createAwal(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'awal.create', $sekolah);
+    }
+
+    /** FR-JTL-01 / BR-ACT-12: admins in scope and the responsible mentor add follow-up sessions. */
+    public function createTl(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'tl.create', $sekolah);
+    }
+
+    /** BR-TL-10: once the last session is set, only Admin Pusat adds sessions. */
+    public function createTlAfterLast(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'tl.create_after_last', $sekolah);
+    }
+
+    /** Designating an executing mentor other than the responsible one (kegiatan.assign_pelaksana). */
+    public function assignPelaksanaBaru(User $user, Sekolah $sekolah): bool
+    {
+        return ! $sekolah->isArchived() && ScopeResolver::allows($user, 'kegiatan.assign_pelaksana', $sekolah);
     }
 
     public function manageNarahubung(User $user, Sekolah $sekolah): bool

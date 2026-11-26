@@ -3,6 +3,7 @@
 namespace App\Filament\Mentor\Resources\Sekolahs;
 
 use App\Domain\Sekolah\Models\Sekolah;
+use App\Domain\Shared\Enums\Jenjang;
 use App\Domain\Shared\Enums\PosisiTahap;
 use App\Domain\Shared\Enums\Role;
 use App\Domain\Shared\Enums\Tahap;
@@ -69,12 +70,13 @@ class SekolahResource extends Resource
             ->columns([
                 TextColumn::make('nama')->label('Nama sekolah')->searchable()->sortable()->wrap()
                     ->description(fn (Sekolah $record) => $record->kabupatenKota->nama),
-                TextColumn::make('jenjang')->badge(),
+                TextColumn::make('jenjang')->badge()->color(fn (Jenjang $state) => $state->color()),
                 TextColumn::make('status_pelatihan')->label('Status')->badge()
                     ->state(fn (Sekolah $record) => $record->statusPelatihan()->label())
                     ->color(fn (Sekolah $record) => $record->statusPelatihan()->color()),
                 TextColumn::make('posisi_tahap')->label('Posisi tahap')->badge()
                     ->formatStateUsing(fn (PosisiTahap $state) => $state->label())
+                    ->color(fn (PosisiTahap $state) => $state->color())
                     ->description(fn (Sekolah $record) => $record->progresTl()),
                 TextColumn::make('penugasanAktif.mentor.name')->label('Penanggung jawab')->placeholder('Belum ditugaskan'),
                 TextColumn::make('narahubungUtama.nama')->label('Narahubung')->placeholder('-')

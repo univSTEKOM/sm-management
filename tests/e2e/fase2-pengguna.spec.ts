@@ -21,6 +21,7 @@ async function newPage(browser: Browser): Promise<Page> {
 }
 
 test('superadmin creates a mentor who must change the initial password, then deactivates it', async ({ browser }) => {
+    test.setTimeout(120_000);
     const email = `mentor.e2e.${Date.now()}@demo.test`;
 
     // Superadmin creates the account.

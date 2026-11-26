@@ -24,7 +24,9 @@ use App\Filament\Mentor\Resources\Sekolahs\Pages\ListSekolahs as MentorListSekol
 use App\Filament\Mentor\Resources\Sekolahs\Pages\ViewSekolah as MentorViewSekolah;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Support\Fixtures;
 
@@ -49,7 +51,9 @@ function adminPanel(User $user): void
 
 describe('list (PRD 13.2, AC-SCH-04..08)', function () {
     test('AC-SCH-08 every row shows stage, mentor, contact, TL progress, both certificates, MOU and overall status', function () {
-        app(RecordSekolahMou::class)->handle($this->ap, $this->sekolahA, 'https://drive.example.test/mou.pdf');
+        Storage::fake('local');
+        Storage::disk('local')->put('mou/mou.pdf', '%PDF-1.4');
+        app(RecordSekolahMou::class)->handle($this->ap, $this->sekolahA, 'mou/mou.pdf', 'mou.pdf');
         Fixtures::kegiatan($this->sekolahA, $this->mentor, ['tahap' => Tahap::Awal->value, 'status' => StatusKegiatan::SedangBerlangsung->value]);
         adminPanel($this->ap);
 
@@ -75,7 +79,9 @@ describe('list (PRD 13.2, AC-SCH-04..08)', function () {
     });
 
     test('AC-SCH-07 filters combine with AND: MOU, overall status and mentor', function () {
-        app(RecordSekolahMou::class)->handle($this->ap, $this->sekolahA, 'https://drive.example.test/mou.pdf');
+        Storage::fake('local');
+        Storage::disk('local')->put('mou/mou.pdf', '%PDF-1.4');
+        app(RecordSekolahMou::class)->handle($this->ap, $this->sekolahA, 'mou/mou.pdf', 'mou.pdf');
         adminPanel($this->ap);
 
         Livewire::test(ListSekolahs::class)
@@ -140,7 +146,7 @@ describe('detail (PRD 13.3) and header actions', function () {
         $this->actingAs($this->acA)->get("/admin/sekolah/{$this->sekolahB->id}")->assertNotFound();
     });
 
-    test('header actions follow the matrix: assign SA/AP, MOU AP only, correction SA only, archive in scope', function () {
+    test('header actions follow the matrix: assign SA/AP, MOU SA/AP, correction SA only, archive in scope', function () {
 
         adminPanel($this->ap);
         Livewire::test(ViewSekolah::class, ['record' => $this->sekolahA->getRouteKey()])
@@ -149,7 +155,7 @@ describe('detail (PRD 13.3) and header actions', function () {
 
         adminPanel($this->sa);
         Livewire::test(ViewSekolah::class, ['record' => $this->sekolahA->getRouteKey()])
-            ->assertActionVisible('assignMentor')->assertActionHidden('recordMou')
+            ->assertActionVisible('assignMentor')->assertActionVisible('recordMou')
             ->assertActionVisible('correctCabang');
 
         adminPanel($this->acA);
@@ -158,17 +164,50 @@ describe('detail (PRD 13.3) and header actions', function () {
             ->assertActionHidden('correctCabang')->assertActionVisible('archive');
     });
 
-    test('admin pusat assigns a mentor and records the MOU from the detail page', function () {
+    test('admin pusat assigns a mentor and uploads the MOU PDF from the detail page', function () {
+        Storage::fake('local');
         adminPanel($this->ap);
+
+        $file = UploadedFile::fake()->create('mou-bravo.pdf', 100, 'application/pdf');
 
         Livewire::test(ViewSekolah::class, ['record' => $this->sekolahB->getRouteKey()])
             ->callAction('assignMentor', data: ['mentor_id' => $this->mentorLain->id])
             ->assertNotified('Mentor ditetapkan')
-            ->callAction('recordMou', data: ['dokumen_url' => 'https://drive.example.test/mou-b.pdf', 'tanggal' => now()->subDay()->toDateString()])
+            ->callAction('recordMou', data: ['dokumen_file' => $file, 'tanggal' => now()->subDay()->toDateString()])
             ->assertNotified('MOU dicatat');
 
         $fresh = $this->sekolahB->fresh();
-        expect($fresh->penugasanAktif->mentor_id)->toBe($this->mentorLain->id)->and($fresh->isMou())->toBeTrue();
+        expect($fresh->penugasanAktif->mentor_id)->toBe($this->mentorLain->id)
+            ->and($fresh->isMou())->toBeTrue()
+            ->and($fresh->mou_dokumen_nama_asli)->toBe('mou-bravo.pdf');
+        Storage::disk('local')->assertExists($fresh->mou_dokumen_path);
+    });
+
+    test('superadmin uploads the MOU PDF from the detail page and only SA/AP can download it', function () {
+        Storage::fake('local');
+        adminPanel($this->sa);
+
+        $file = UploadedFile::fake()->create('mou-alpha.pdf', 100, 'application/pdf');
+
+        Livewire::test(ViewSekolah::class, ['record' => $this->sekolahA->getRouteKey()])
+            ->callAction('recordMou', data: ['dokumen_file' => $file, 'tanggal' => now()->subDay()->toDateString()])
+            ->assertNotified('MOU dicatat');
+
+        $fresh = $this->sekolahA->fresh();
+        expect($fresh->isMou())->toBeTrue()
+            ->and($fresh->mou_dokumen_nama_asli)->toBe('mou-alpha.pdf')
+            ->and($fresh->mou_dicatat_oleh)->toBe($this->sa->id);
+
+        $downloadUrl = route('mou.download', $fresh);
+
+        $this->actingAs($this->sa)->get($downloadUrl)->assertOk();
+        $this->actingAs($this->ap)->get($downloadUrl)->assertOk();
+        $this->actingAs($this->acA)->get($downloadUrl)->assertForbidden();
+        $this->actingAs($this->mentor)->get($downloadUrl)->assertForbidden();
+
+        // Detail page displays the download link to SA/AP but hides it from Admin Cabang and Mentor
+        $this->actingAs($this->sa)->get("/admin/sekolah/{$fresh->id}")->assertOk()->assertSee('mou-alpha.pdf');
+        $this->actingAs($this->acA)->get("/admin/sekolah/{$fresh->id}")->assertOk()->assertSee('Sudah MOU')->assertDontSee($downloadUrl);
     });
 
     test('archive refused with open activities shows the domain message and keeps the school', function () {

@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Sekolahs\Schemas;
 
 use App\Domain\Sekolah\Models\Sekolah;
+use App\Domain\Shared\Enums\Jenjang;
 use App\Domain\Shared\Enums\PosisiTahap;
 use App\Domain\Shared\Enums\StatusKegiatan;
 use App\Domain\Shared\Enums\Tahap;
@@ -14,6 +15,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Detail Sekolah (PRD 13.3, UI brief section "Detail Sekolah"). Activities of both stages
@@ -34,11 +36,11 @@ class SekolahInfolist
                         Tab::make('Ringkasan')->icon('heroicon-o-building-library')->schema([
                             Section::make('Identitas')->columns(3)->schema([
                                 TextEntry::make('nama'),
-                                TextEntry::make('jenjang')->badge(),
+                                TextEntry::make('jenjang')->badge()->color(fn (Jenjang $state) => $state->color()),
                                 TextEntry::make('kabupatenKota.nama')->label('Kabupaten/Kota'),
                                 TextEntry::make('cabang.nama')->label('Cabang'),
                                 TextEntry::make('tanggal_mitra')->label('Tanggal mitra')->date('d M Y')->placeholder('-'),
-                                TextEntry::make('kategori.nama')->label('Kategori pelatihan')->badge()->placeholder('-'),
+                                TextEntry::make('kategori.nama')->label('Kategori pelatihan')->badge()->color('gray')->placeholder('-'),
                                 TextEntry::make('alamat')->columnSpanFull()->placeholder('-'),
                             ]),
                             Section::make('Status')->columns(3)->schema([
@@ -46,7 +48,8 @@ class SekolahInfolist
                                     ->state(fn (Sekolah $record) => $record->statusPelatihan()->label())
                                     ->color(fn (Sekolah $record) => $record->statusPelatihan()->color()),
                                 TextEntry::make('posisi_tahap')->label('Posisi tahap')->badge()
-                                    ->formatStateUsing(fn (PosisiTahap $state) => $state->label()),
+                                    ->formatStateUsing(fn (PosisiTahap $state) => $state->label())
+                                    ->color(fn (PosisiTahap $state) => $state->color()),
                                 TextEntry::make('progres_tl')->label('Progres Tindak Lanjut')
                                     ->state(fn (Sekolah $record) => $record->progresTl() ?? 'Belum ada sesi'),
                                 TextEntry::make('mou')->label('MOU')->badge()
@@ -54,10 +57,10 @@ class SekolahInfolist
                                     ->color(fn (Sekolah $record) => $record->isMou() ? 'success' : 'gray'),
                                 TextEntry::make('mou_tanggal')->label('Tanggal MOU')->date('d M Y')->placeholder('-')
                                     ->visible(fn (Sekolah $record) => $record->isMou()),
-                                TextEntry::make('mou_dokumen_url')->label('Dokumen MOU')
-                                    ->formatStateUsing(fn () => 'Buka dokumen')
-                                    ->url(fn (Sekolah $record) => $record->mou_dokumen_url, shouldOpenInNewTab: true)
-                                    ->visible(fn (Sekolah $record) => $record->isMou() && auth()->user()->role->isAdmin()),
+                                TextEntry::make('mou_dokumen_path')->label('Dokumen MOU')
+                                    ->formatStateUsing(fn (Sekolah $record) => $record->mou_dokumen_nama_asli ?? 'Unduh dokumen')
+                                    ->url(fn (Sekolah $record) => $record->mouDownloadUrl(), shouldOpenInNewTab: true)
+                                    ->visible(fn (Sekolah $record) => $record->isMou() && Gate::allows('viewMou', $record)),
                                 TextEntry::make('penugasanAktif.mentor.name')->label('Mentor penanggung jawab')->placeholder('Belum ditugaskan'),
                                 TextEntry::make('narahubungUtama.nama')->label('Narahubung utama')->placeholder('-')
                                     ->helperText(fn (Sekolah $record) => $record->narahubungUtama?->jabatan),
@@ -95,7 +98,7 @@ class SekolahInfolist
                                             ->helperText(fn ($record) => $record->kegiatan->tahap->label()),
                                         TextEntry::make('penulis.name')->label('Ditulis oleh'),
                                         TextEntry::make('created_at')->label('Tanggal')->dateTime('d M Y H:i'),
-                                        TextEntry::make('status')->badge()->formatStateUsing(fn (StatusKegiatan $state) => $state->label()),
+                                        TextEntry::make('status')->badge()->formatStateUsing(fn (StatusKegiatan $state) => $state->label())->color(fn (StatusKegiatan $state) => $state->color()),
                                         TextEntry::make('catatan')->columnSpanFull(),
                                     ]),
                             ]),

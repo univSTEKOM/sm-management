@@ -19,6 +19,17 @@ enum StatusKegiatan: string
         };
     }
 
+    /** Badge colour (admin panel): the meaning of each status, never the brand colour. */
+    public function color(): string
+    {
+        return match ($this) {
+            self::BelumDimulai => 'gray',
+            self::SedangBerlangsung => 'warning',
+            self::Selesai => 'success',
+            self::Dibatalkan => 'danger',
+        };
+    }
+
     /** Statuses that keep an activity "open" (not finished, not cancelled). */
     public function isOpen(): bool
     {

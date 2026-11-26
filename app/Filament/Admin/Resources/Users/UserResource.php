@@ -91,7 +91,7 @@ class UserResource extends Resource
             ->columns([
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
                 TextColumn::make('email')->label('Email')->searchable(),
-                TextColumn::make('role')->label('Role')->badge()->formatStateUsing(fn (Role $state) => $state->label()),
+                TextColumn::make('role')->label('Role')->badge()->formatStateUsing(fn (Role $state) => $state->label())->color('gray'),
                 TextColumn::make('cabang.nama')->label('Cabang')->placeholder('—'),
                 IconColumn::make('aktif')->label('Aktif')->boolean(),
                 TextColumn::make('last_login_at')->label('Login terakhir')->since()->placeholder('Belum pernah')->sortable(),

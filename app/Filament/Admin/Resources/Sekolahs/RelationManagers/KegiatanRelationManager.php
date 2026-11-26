@@ -6,6 +6,7 @@ use App\Domain\Jadwal\Actions\RescheduleKegiatan;
 use App\Domain\Jadwal\Models\Kegiatan;
 use App\Domain\Shared\Enums\StatusKegiatan;
 use App\Domain\Shared\Enums\Tahap;
+use App\Filament\Support\JadwalActions;
 use App\Filament\Support\RescheduleFormSchema;
 use App\Filament\Support\RunsDomainAction;
 use Filament\Actions\Action;
@@ -31,13 +32,13 @@ class KegiatanRelationManager extends RelationManager
                 ->when(static::$tahap, fn ($q, Tahap $tahap) => $q->where('tahap', $tahap->value))
                 ->orderBy('tahap')->orderBy('urutan'))
             ->columns([
-                TextColumn::make('tahap')->badge()->formatStateUsing(fn (Tahap $state) => $state->label()),
+                TextColumn::make('tahap')->badge()->formatStateUsing(fn (Tahap $state) => $state->label())->color(fn (Tahap $state) => $state->color()),
                 TextColumn::make('nama_sesi')->label('Sesi'),
                 TextColumn::make('tanggal')->date('d M Y'),
                 TextColumn::make('waktu_mulai')->label('Waktu')->formatStateUsing(fn ($state, Kegiatan $record) => substr((string) $state, 0, 5).'–'.substr((string) $record->waktu_selesai, 0, 5)),
                 TextColumn::make('metode.nama')->label('Metode'),
                 TextColumn::make('mentorPelaksana.name')->label('Mentor pelaksana'),
-                TextColumn::make('status')->badge()->formatStateUsing(fn (StatusKegiatan $state) => $state->label()),
+                TextColumn::make('status')->badge()->formatStateUsing(fn (StatusKegiatan $state) => $state->label())->color(fn (StatusKegiatan $state) => $state->color()),
             ])
             ->filters([
                 SelectFilter::make('tahap')->visible(static::$tahap === null)->options([
@@ -45,6 +46,7 @@ class KegiatanRelationManager extends RelationManager
                     Tahap::TindakLanjut->value => Tahap::TindakLanjut->label(),
                 ]),
             ])
+            ->headerActions($this->tableHeaderActions())
             ->recordActions([
                 Action::make('reschedule')
                     ->label('Jadwal Ulang')
@@ -58,6 +60,15 @@ class KegiatanRelationManager extends RelationManager
                             app(RescheduleKegiatan::class)->handle(auth()->user(), $record, $input, (string) ($input['alasan'] ?? ''), isset($input['version']) ? (int) $input['version'] : null);
                         }, 'Jadwal diperbarui');
                     }),
+                JadwalActions::ubahDetail(),
+                JadwalActions::tunjukPelaksana(),
+                JadwalActions::riwayat(),
             ]);
+    }
+
+    /** Stage-specific create actions; the base manager (all stages) has none. @return array<int, Action> */
+    protected function tableHeaderActions(): array
+    {
+        return [];
     }
 }

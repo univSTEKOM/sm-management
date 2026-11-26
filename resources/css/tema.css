@@ -1,0 +1,102 @@
+/*
+ * Brand theme (red). Tokens mirror App\Support\Theme\BrandPalette (a test keeps them in sync);
+ * Filament's primary/gray scales come from the same class via the panel providers.
+ * Status colours are Filament's semantic ones and are deliberately not touched here.
+ */
+:root {
+    --brand-primary: #B91C1C;
+    --brand-dark: #7F1D1D;
+    --brand-light: #FEE2E2;
+    --brand-soft: #FEF2F2;
+    --brand-accent: #DC2626;
+    --brand-bg: #F8FAFC;
+    --brand-surface: #FFFFFF;
+    --brand-text: #1E293B;
+    --brand-text-muted: #64748B;
+    --brand-border: #E2E8F0;
+
+    --tahap-awal: var(--brand-primary);
+    --tahap-tindak-lanjut: #1E40AF;
+    --tahap-dibatalkan: var(--brand-text-muted);
+}
+
+/* Light mode only: dark mode keeps Filament's own surfaces. */
+html:not(.dark) {
+    /* Sidebar: white surface with a hairline border instead of floating on the page background. */
+    & .fi-sidebar {
+        background: var(--brand-surface);
+        border-inline-end: 1px solid var(--brand-border);
+    }
+
+    /* Active menu item: soft red highlight with a red accent bar. */
+    & .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+        background: var(--brand-soft);
+        box-shadow: inset 3px 0 0 var(--brand-primary);
+    }
+
+    & .fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
+    & .fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+        color: var(--brand-primary);
+    }
+
+    & .fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover {
+        background: var(--brand-soft);
+    }
+
+    /* Header stays clean: white with a hairline. */
+    & .fi-topbar {
+        box-shadow: none;
+        border-bottom: 1px solid var(--brand-border);
+        --tw-ring-shadow: 0 0 #0000;
+    }
+
+    /* Tables: quiet hover. */
+    & .fi-ta-row:hover {
+        background: var(--brand-soft);
+    }
+
+    & .fi-ta-header-cell {
+        color: var(--brand-text-muted);
+    }
+}
+
+/* Login and other simple-layout cards: a thin brand accent on top. */
+.fi-simple-main {
+    border-top: 3px solid var(--brand-primary);
+}
+
+/* Visible keyboard focus in the brand colour. */
+:focus-visible {
+    outline-color: var(--brand-primary);
+}
+
+/*
+ * Klasemen chart: Filament only caps the canvas height, so without a frame height the chart falls
+ * back to a 2:1 ratio and collapses on phones. The frame gets an explicit height; the canvas is
+ * still limited by the widget's own max-height, which grows with the number of categories.
+ */
+[role="img"][aria-label^="Klasemen Kategori"] .fi-wi-chart-frame {
+    height: 30rem;
+    align-items: flex-start;
+}
+
+/*
+ * Dashboard school table: the table body scrolls inside a bounded box so the header row stays
+ * visible while a long list is read, and horizontal scroll stays inside the table on phones.
+ */
+.dash-sekolah-table .fi-ta-content {
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.dash-sekolah-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--brand-bg, #f8fafc);
+    box-shadow: inset 0 -2px 0 var(--brand-light, #fee2e2);
+}
+
+.dash-sekolah-table .fi-ta-table {
+    min-width: 64rem;
+}

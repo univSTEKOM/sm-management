@@ -6,6 +6,7 @@ use App\Domain\Jadwal\Models\Kegiatan;
 use App\Domain\Master\Models\Cabang;
 use App\Domain\Master\Models\JenisKegiatan;
 use App\Domain\Master\Models\KabupatenKota;
+use App\Domain\Master\Models\KategoriPelatihan;
 use App\Domain\Master\Models\MetodeKegiatan;
 use App\Domain\Mentor\Models\PenugasanMentor;
 use App\Domain\Sekolah\Models\Narahubung;
@@ -16,6 +17,7 @@ use App\Domain\Shared\Enums\Role;
 use App\Domain\Shared\Enums\StatusKegiatan;
 use App\Domain\Shared\Enums\Tahap;
 use App\Models\User;
+use App\Support\Progress\ProgressRecalculator;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -53,6 +55,7 @@ class DemoSeeder extends Seeder
         $this->kegiatan($smg, $mentor, $sa, Tahap::Awal, 1, 'Pelatihan Awal', $offline, $pelatihan, today()->subDays(2), StatusKegiatan::BelumDimulai, ['lokasi' => 'Kampus Pusat']);
         $this->kegiatan($smg, $mentor, $sa, Tahap::TindakLanjut, 1, 'Sesi 1', $online, $pelatihan, today()->addDays(3), StatusKegiatan::BelumDimulai, ['tautan_pertemuan' => 'https://meet.example.test/smg-1']);
         $this->kegiatan($smg, $mentor, $sa, Tahap::TindakLanjut, 2, 'Sesi 2', $online, $pelatihan, today()->addDays(10), StatusKegiatan::BelumDimulai, ['tautan_pertemuan' => 'https://meet.example.test/smg-2']);
+        $this->mitraDemo($semarang, $solo, $sa, $mentorLain, $offline, $pelatihan);
         $this->kegiatan($slo, $mentorLain, $sa, Tahap::TindakLanjut, 1, 'Sesi 1', $online, $pelatihan, today()->addDays(4), StatusKegiatan::BelumDimulai, ['tautan_pertemuan' => 'https://meet.example.test/rahasia-solo']);
     }
 
@@ -66,6 +69,36 @@ class DemoSeeder extends Seeder
             'aktif' => true,
             'wajib_ganti_password' => false,
         ]);
+    }
+
+    /**
+     * Official partners (initial training finished long ago) with training categories, so the
+     * klasemen has data. They belong to the second mentor so the first mentor's screens stay
+     * unchanged. SMAN 1 Semarang is only a candidate: its category must not be counted.
+     */
+    private function mitraDemo(Cabang $semarang, Cabang $solo, User $sa, User $mentorLain, MetodeKegiatan $offline, JenisKegiatan $pelatihan): void
+    {
+        $kategori = fn (string $nama) => KategoriPelatihan::where('nama', $nama)->firstOrFail()->id;
+        $jasa = $kategori('Jasa Layanan Bisnis');
+        $barber = $kategori('Barbershop');
+        $akuntan = $kategori('Akuntan Bisnis dan Perpajakan');
+
+        $semarangKota = KabupatenKota::where('kode', '3374')->firstOrFail();
+        $soloKota = KabupatenKota::where('kode', '3372')->firstOrFail();
+
+        $mitra = [
+            [$this->sekolah('SMAN 2 Semarang', $semarang, $semarangKota, $sa, $mentorLain), $mentorLain, [$jasa, $barber]],
+            [$this->sekolah('SMKN 4 Semarang', $semarang, $semarangKota, $sa, $mentorLain), $mentorLain, [$jasa]],
+            [$this->sekolah('SMAN 1 Surakarta', $solo, $soloKota, $sa, $mentorLain), $mentorLain, [$jasa, $akuntan]],
+        ];
+
+        foreach ($mitra as [$sekolah, $pelaksana, $kategoriIds]) {
+            $this->kegiatan($sekolah, $pelaksana, $sa, Tahap::Awal, 1, 'Pelatihan Awal', $offline, $pelatihan, today()->subDays(120), StatusKegiatan::Selesai, ['lokasi' => 'Kampus Pusat']);
+            $sekolah->kategori()->syncWithoutDetaching($kategoriIds);
+            ProgressRecalculator::forSekolah($sekolah);
+        }
+
+        Sekolah::where('nama', 'SMAN 1 Semarang')->firstOrFail()->kategori()->syncWithoutDetaching([$barber]);
     }
 
     private function sekolah(string $nama, Cabang $cabang, KabupatenKota $kab, User $creator, User $mentor): Sekolah

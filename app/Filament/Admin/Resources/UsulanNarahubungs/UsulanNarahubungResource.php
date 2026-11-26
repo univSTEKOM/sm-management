@@ -59,7 +59,7 @@ class UsulanNarahubungResource extends Resource
             ->columns([
                 TextColumn::make('sekolah.nama')->label('Sekolah')->searchable()
                     ->url(fn (NarahubungUsulan $record) => SekolahResource::getUrl('view', ['record' => $record->sekolah_id])),
-                TextColumn::make('jenis')->label('Jenis')->badge()
+                TextColumn::make('jenis')->label('Jenis')->badge()->color('gray')
                     ->state(fn (NarahubungUsulan $record) => $record->narahubung_id ? 'Ubah' : 'Tambah'),
                 TextColumn::make('perubahan')->label('Usulan')->wrap()
                     ->state(fn (NarahubungUsulan $record) => self::describe($record)),

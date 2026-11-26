@@ -29,6 +29,7 @@ use App\Domain\Shared\Enums\StatusSertifikat;
 use App\Domain\Shared\Enums\Tahap;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Fixtures;
 
@@ -256,26 +257,56 @@ describe('mentor assignment (BR-MNT-01/03/05, A-02)', function () {
 });
 
 describe('MOU (owner decision D-03)', function () {
+    beforeEach(function () {
+        Storage::fake('local');
+    });
+
     test('admin pusat records and revokes the MOU document with audit', function () {
-        app(RecordSekolahMou::class)->handle($this->ap, $this->sekolah, 'https://drive.example.test/mou-1.pdf', now()->subDay()->toDateString());
+        $fakePath = 'mou/mou-test.pdf';
+        Storage::disk('local')->put($fakePath, '%PDF-1.4 fake pdf content');
+
+        app(RecordSekolahMou::class)->handle($this->ap, $this->sekolah, $fakePath, 'mou-test.pdf', now()->subDay()->toDateString());
 
         $fresh = $this->sekolah->fresh();
-        expect($fresh->isMou())->toBeTrue()->and($fresh->mou_dicatat_oleh)->toBe($this->ap->id);
+        expect($fresh->isMou())->toBeTrue()
+            ->and($fresh->mou_dokumen_path)->toBe($fakePath)
+            ->and($fresh->mou_dokumen_nama_asli)->toBe('mou-test.pdf')
+            ->and($fresh->mou_dicatat_oleh)->toBe($this->ap->id);
 
         expect(fn () => app(RecordSekolahMou::class)->revoke($this->ap, $fresh, ''))->toThrow(ValidationException::class);
         app(RecordSekolahMou::class)->revoke($this->ap, $fresh, 'Dokumen salah sekolah');
 
         expect($this->sekolah->fresh()->isMou())->toBeFalse()
             ->and(AuditLog::whereIn('aksi', ['sekolah.mou', 'sekolah.mou_batal'])->count())->toBe(2);
+
+        // File should be deleted after revoke
+        Storage::disk('local')->assertMissing($fakePath);
     });
 
-    test('only admin pusat may record the MOU and the link must be a URL', function () {
-        foreach ([$this->sa, $this->acA, $this->mentor] as $user) {
-            expect(fn () => app(RecordSekolahMou::class)->handle($user, $this->sekolah, 'https://x.test/mou.pdf'))->toThrow(AuthorizationException::class);
+    test('superadmin may also record the MOU and replacing deletes the old file (D-03 updated 26 Nov 2026)', function () {
+        $oldPath = 'mou/mou-sa-old.pdf';
+        $newPath = 'mou/mou-sa-new.pdf';
+        Storage::disk('local')->put($oldPath, '%PDF-1.4 old');
+        Storage::disk('local')->put($newPath, '%PDF-1.4 new');
+
+        app(RecordSekolahMou::class)->handle($this->sa, $this->sekolah, $oldPath, 'mou-sa-old.pdf');
+        expect($this->sekolah->fresh()->isMou())->toBeTrue()
+            ->and($this->sekolah->fresh()->mou_dicatat_oleh)->toBe($this->sa->id);
+
+        app(RecordSekolahMou::class)->handle($this->ap, $this->sekolah->fresh(), $newPath, 'mou-sa-new.pdf');
+        expect($this->sekolah->fresh()->mou_dokumen_path)->toBe($newPath)
+            ->and($this->sekolah->fresh()->mou_dokumen_nama_asli)->toBe('mou-sa-new.pdf');
+        Storage::disk('local')->assertMissing($oldPath);
+        Storage::disk('local')->assertExists($newPath);
+    });
+
+    test('only superadmin and admin pusat may record the MOU; path must be a non-empty string', function () {
+        foreach ([$this->acA, $this->mentor] as $user) {
+            expect(fn () => app(RecordSekolahMou::class)->handle($user, $this->sekolah, 'mou/file.pdf', 'file.pdf'))->toThrow(AuthorizationException::class);
         }
 
-        expect(fn () => app(RecordSekolahMou::class)->handle($this->ap, $this->sekolah, 'bukan-url'))->toThrow(ValidationException::class)
-            ->and(fn () => app(RecordSekolahMou::class)->handle($this->ap, $this->sekolah, 'javascript:alert(1)'))->toThrow(ValidationException::class);
+        expect(fn () => app(RecordSekolahMou::class)->handle($this->ap, $this->sekolah, '', 'file.pdf'))->toThrow(ValidationException::class)
+            ->and(fn () => app(RecordSekolahMou::class)->handle($this->ap, $this->sekolah, 'mou/file.pdf', ''))->toThrow(ValidationException::class);
     });
 });
 

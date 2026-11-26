@@ -19,4 +19,10 @@ enum PosisiTahap: string
             self::SelesaiProgram => 'Selesai Program',
         };
     }
+
+    /** Informational badge: the stage is a position, not a good/bad state. */
+    public function color(): string
+    {
+        return 'info';
+    }
 }

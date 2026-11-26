@@ -6,6 +6,7 @@ use App\Domain\Sekolah\Actions\ProposeNarahubungChange;
 use App\Domain\Sekolah\Models\Narahubung;
 use App\Domain\Sekolah\Models\Sekolah;
 use App\Filament\Mentor\Resources\Sekolahs\SekolahResource;
+use App\Filament\Support\JadwalActions;
 use App\Filament\Support\RunsDomainAction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -41,6 +42,8 @@ class ViewSekolah extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            // BR-ACT-12: the responsible mentor adds follow-up sessions (not after the last session is set).
+            JadwalActions::tambahSesi(fn () => $this->record, fn () => $this->redirect(static::getUrl(['record' => $this->record]))),
             Action::make('proposeNarahubung')
                 ->label('Usulkan Perubahan Narahubung')
                 ->icon('heroicon-o-pencil-square')

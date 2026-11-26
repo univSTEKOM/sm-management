@@ -2,3 +2,9 @@
 
 @source '../../../../app/Filament/Admin/**/*';
 @source '../../../../resources/views/filament/admin/**/*';
+
+@import '../../tema.css';
+@import '../../kalender.css';
+@source '../../../../vendor/saade/filament-fullcalendar/resources/views/**/*.blade.php';
+@source '../../../../resources/views/filament/widgets/**/*';
+@source '../../../../app/Filament/Widgets/**/*';

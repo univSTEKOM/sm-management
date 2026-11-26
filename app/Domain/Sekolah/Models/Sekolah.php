@@ -45,7 +45,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $tl_selesai_at
  * @property Carbon|null $diarsipkan_at
  * @property string|null $alasan_arsip
- * @property string|null $mou_dokumen_url
+ * @property string|null $mou_dokumen_path
+ * @property string|null $mou_dokumen_nama_asli
  * @property Carbon|null $mou_tanggal
  * @property int|null $mou_dicatat_oleh
  * @property Carbon|null $mou_dicatat_at
@@ -172,7 +173,20 @@ class Sekolah extends Model
 
     public function isMou(): bool
     {
-        return filled($this->mou_dokumen_url);
+        return filled($this->mou_dokumen_path);
+    }
+
+    /**
+     * Returns a URL to download the MOU document via the authenticated download route.
+     * Returns null if no document is recorded.
+     */
+    public function mouDownloadUrl(): ?string
+    {
+        if (! $this->mou_dokumen_path) {
+            return null;
+        }
+
+        return route('mou.download', $this);
     }
 
     /**
@@ -209,6 +223,21 @@ class Sekolah extends Model
             StatusPelatihan::SedangBerlangsung => $query->where('posisi_tahap', '<>', PosisiTahap::SelesaiProgram->value)->whereHas('kegiatan', $berjalan),
             StatusPelatihan::BelumDimulai => $query->where('posisi_tahap', '<>', PosisiTahap::SelesaiProgram->value)->whereDoesntHave('kegiatan', $berjalan),
         };
+    }
+
+    /** AC-JTL-03: informational comparison with the juklak pattern 4 online + 1 offline (BR-TL-03). */
+    public function komposisiTl(): string
+    {
+        $sesi = $this->kegiatan()
+            ->where('tahap', Tahap::TindakLanjut->value)
+            ->where('status', '<>', StatusKegiatan::Dibatalkan->value)
+            ->with('metode')
+            ->get();
+
+        $online = $sesi->filter(fn ($k) => (bool) $k->metode?->butuh_tautan)->count();
+        $offline = $sesi->filter(fn ($k) => (bool) $k->metode?->butuh_lokasi)->count();
+
+        return "Online {$online} · Offline {$offline} (acuan juklak 4+1)";
     }
 
     public function statusPelatihan(): StatusPelatihan

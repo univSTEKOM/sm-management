@@ -16,9 +16,10 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -91,15 +92,29 @@ class ViewSekolah extends ViewRecord
             ->label(fn () => $this->record->isMou() ? 'Perbarui MOU' : 'Catat MOU')
             ->icon('heroicon-o-document-check')
             ->visible(fn () => Gate::allows('recordMou', $this->record))
-            ->fillForm(fn () => ['dokumen_url' => $this->record->mou_dokumen_url, 'tanggal' => $this->record->mou_tanggal?->toDateString()])
+            ->fillForm(fn () => ['tanggal' => $this->record->mou_tanggal?->toDateString()])
             ->schema([
-                TextInput::make('dokumen_url')->label('Tautan dokumen MOU')->required()->url()->maxLength(2000)
-                    ->helperText('Tautan berkas MOU (misalnya Google Drive). Sekolah berstatus "Sudah MOU" setelah tautan dicatat.'),
+                FileUpload::make('dokumen_file')
+                    ->label('Dokumen MOU (PDF)')
+                    ->disk('local')
+                    ->directory('mou')
+                    ->visibility('private')
+                    ->acceptedFileTypes(['application/pdf'])
+                    ->maxSize(10240)
+                    ->storeFileNamesIn('dokumen_nama_asli')
+                    ->helperText('Unggah berkas MOU berformat PDF (maks. 10 MB). Sekolah berstatus "Sudah MOU" setelah dokumen diunggah.')
+                    ->required(),
+                Hidden::make('dokumen_nama_asli'),
                 DatePicker::make('tanggal')->label('Tanggal MOU')->maxDate(today()),
             ])
             ->action(function (Action $action, array $data) {
+                $filePath = is_array($data['dokumen_file']) ? array_values($data['dokumen_file'])[0] : $data['dokumen_file'];
+                $namaAsli = filled($data['dokumen_nama_asli'] ?? null)
+                    ? (string) $data['dokumen_nama_asli']
+                    : basename((string) $filePath);
+
                 RunsDomainAction::run($action, fn () => app(RecordSekolahMou::class)
-                    ->handle(auth()->user(), $this->record, (string) $data['dokumen_url'], $data['tanggal'] ?? null), 'MOU dicatat');
+                    ->handle(auth()->user(), $this->record, (string) $filePath, $namaAsli, $data['tanggal'] ?? null), 'MOU dicatat');
                 $this->refreshRecord();
             });
     }

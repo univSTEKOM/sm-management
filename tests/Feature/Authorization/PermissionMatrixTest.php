@@ -26,8 +26,8 @@ const PRD_MATRIX = [
     'sekolah.correct_cabang' => ['A', '-', '-', '-'],
     'sekolah.transfer' => ['-', '-', '-', '-'],
     'sekolah.archive' => ['A', 'A', 'C', '-'],
-    // Not in PRD v1.3: owner decision 23 Nov 2026 (PHASE_LOG D-03), Admin Pusat only.
-    'sekolah.mou' => ['-', 'A', '-', '-'],
+    // Not in PRD v1.3: owner decision 26 Nov 2026 (PHASE_LOG D-03 updated), Superadmin and Admin Pusat.
+    'sekolah.mou' => ['A', 'A', '-', '-'],
     'sekolah.kategori' => ['A', 'A', 'C', '-'],
     'narahubung.manage' => ['A', 'A', 'C', '-'],
     'narahubung.propose' => ['-', '-', '-', 'T'],
@@ -134,6 +134,8 @@ describe('policies enforce role, branch and assignment', function () {
         'view' => ['view', ['superadmin', 'admin_pusat', 'admin_cabang_sendiri', 'mentor_pj', 'mentor_pelaksana', 'mentor_lain']],
         'update' => ['update', ['superadmin', 'admin_pusat', 'admin_cabang_sendiri']],
         'archive' => ['archive', ['superadmin', 'admin_pusat', 'admin_cabang_sendiri']],
+        'recordMou' => ['recordMou', ['superadmin', 'admin_pusat']],
+        'viewMou' => ['viewMou', ['superadmin', 'admin_pusat']],
         'correctCabang (school has activities)' => ['correctCabang', []],
         'delete' => ['delete', []],
     ]);

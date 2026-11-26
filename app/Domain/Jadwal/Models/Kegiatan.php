@@ -70,16 +70,19 @@ class Kegiatan extends Model
         return $this->belongsTo(JenisKegiatan::class);
     }
 
+    /** @return BelongsTo<MetodeKegiatan, $this> */
     public function metode(): BelongsTo
     {
         return $this->belongsTo(MetodeKegiatan::class, 'metode_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function mentorPelaksana(): BelongsTo
     {
         return $this->belongsTo(User::class, 'mentor_pelaksana_id');
     }
 
+    /** @return HasMany<KegiatanJadwalRiwayat, $this> */
     public function riwayatJadwal(): HasMany
     {
         return $this->hasMany(KegiatanJadwalRiwayat::class)->orderBy('versi');

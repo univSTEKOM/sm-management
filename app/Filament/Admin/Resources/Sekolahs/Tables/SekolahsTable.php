@@ -39,7 +39,7 @@ class SekolahsTable
                 TextColumn::make('no')->label('No')->rowIndex(),
                 TextColumn::make('nama')->label('Nama sekolah')->searchable()->sortable()->wrap()
                     ->description(fn (Sekolah $record) => $record->kabupatenKota->nama),
-                TextColumn::make('jenjang')->badge(),
+                TextColumn::make('jenjang')->badge()->color(fn (Jenjang $state) => $state->color()),
                 TextColumn::make('cabang.nama')->label('Cabang')->toggleable(),
                 TextColumn::make('mou')->label('MOU')->badge()
                     ->state(fn (Sekolah $record) => $record->isMou() ? 'Sudah MOU' : 'Belum MOU')
@@ -49,6 +49,7 @@ class SekolahsTable
                     ->color(fn (Sekolah $record) => $record->statusPelatihan()->color()),
                 TextColumn::make('posisi_tahap')->label('Posisi tahap')->badge()->toggleable()
                     ->formatStateUsing(fn (PosisiTahap $state) => $state->label())
+                    ->color(fn (PosisiTahap $state) => $state->color())
                     ->description(fn (Sekolah $record) => $record->progresTl()),
                 TextColumn::make('penugasanAktif.mentor.name')->label('Penanggung jawab')->placeholder('Belum ditugaskan'),
                 TextColumn::make('narahubungUtama.nama')->label('Narahubung')->placeholder('-')
@@ -96,8 +97,8 @@ class SekolahsTable
                     ->trueLabel('Sudah MOU')
                     ->falseLabel('Belum MOU')
                     ->queries(
-                        true: fn (Builder $q) => $q->whereNotNull('mou_dokumen_url'),
-                        false: fn (Builder $q) => $q->whereNull('mou_dokumen_url'),
+                        true: fn (Builder $q) => $q->whereNotNull('mou_dokumen_path'),
+                        false: fn (Builder $q) => $q->whereNull('mou_dokumen_path'),
                     ),
                 SelectFilter::make('sertifikat')
                     ->label('Sertifikat')
